@@ -1,5 +1,5 @@
 '''
-Created on Sep 27, 2013
+Created on Aug 11, 2017
 
 @author: pydupont
 '''
@@ -13,11 +13,16 @@ import datetime
 from commands import getoutput
 
 def run(x):
+    """
+    Run the command
+    """
     return os.system(x)
 
 def parallel_run(t, nb_cores):
-    sys.stdout.write("%s commands to execute on %s cores\n" %(len(t), nb_cores))
-    
+    """
+    Runs a list of commands in parallel using a given number of processes
+    """
+    sys.stdout.write("%s commands to execute on %s cores\n" %(len(t), nb_cores))    
     for i,tt in enumerate(t):
         if "@echo" in tt:
             if tt.startswith('#'): tt = tt[1:]
@@ -59,6 +64,7 @@ def main():
         sys.stderr.write("%s not a valid file\n" % infile)
         exit(3)
 
+    #Create the list of commands. In case of blocks: it is a list of lists with one list of commands per blocks
     t = []
     blocks = False
     with open(infile) as f:
@@ -77,6 +83,8 @@ def main():
                 t[-1].append(line.strip())
             else:
                 t.append(line.strip())
+                
+    #In case of blocks, many parallel_runs are started sequencially
     if blocks:
         sys.stderr.write("%s command blocks containing %s commands to run in total\n" % (len(t), sum([len(x) for x in t])))
         for tt in t:

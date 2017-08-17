@@ -9,6 +9,7 @@ import multiprocessing
 import os
 import sys
 import time
+import datetime
 from commands import getoutput
 
 def run(x):
@@ -16,7 +17,16 @@ def run(x):
 
 def parallel_run(t, nb_cores):
     sys.stdout.write("%s commands to execute on %s cores\n" %(len(t), nb_cores))
-
+    
+    for i,tt in enumerate(t):
+        if "@echo" in tt:
+            if tt.startswith('#'): tt = tt[1:]
+            line = " ".join([x for x in tt.split() if not x.startswith("@")])
+            if "@time" in tt:
+                line += " `date`"
+            t[i] = "echo \"%s\r\n\"" % line
+        elif "@time" in tt:
+            t[i] = "echo `date`\r\n"
     num_tasks = len(t)
     p = multiprocessing.Pool(processes=nb_cores)
     rs = p.imap_unordered(run, t)
@@ -54,14 +64,14 @@ def main():
     with open(infile) as f:
         for line in f:
             if "@block" in line:
-                sys.stderr.write("%s\n" % line[len("@block"):].strip())
+                t.append("@echo @time %s\n" % line[line.index("@block") + len("@block"):].strip())
                 if not blocks:
                     t = [list(t)]
                     blocks = True
                 t.append([])
                 continue
             if "#@exit" in line: break #usefull for debug
-            if line.startswith('#'): continue
+            if line.startswith('#') and "@" not in line: continue
             if not line.strip(): continue
             if blocks:
                 t[-1].append(line.strip())
